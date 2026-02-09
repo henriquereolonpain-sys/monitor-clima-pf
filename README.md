@@ -23,3 +23,11 @@ O projeto monitora a temperatura máxima e precipitação diária. Executa um jo
 
 ## Automação
 O workflow é definido em .github/workflows/robo_coleta.yml. Utiliza uma secret do repositório (GOOGLE_APPLICATION_CREDENTIALS) para autenticação segura no Google Cloud Platform.
+
+## ## Visualização de Dados
+
+Os dados armazenados no BigQuery são conectados ao **Looker Studio** para monitoramento em tempo real. O dashboard foi projetado para fornecer:
+
+- **Análise de Tendência**: Média móvel de temperatura para suavizar picos diários.
+- **Monitoramento Pluviométrico**: Acumulado de chuva mensal para análise de impacto regional.
+- **KPIs Diários**: Comparativo de variação térmica em relação ao dia anterior.

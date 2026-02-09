@@ -2,8 +2,8 @@ name: Coleta Diaria BigQuery
 
 on:
   schedule:
-    - cron: '0 10 * * *' # Roda todo dia às 07:00 Brasil
-  workflow_dispatch: # Botão manual
+    - cron: '0 10 * * *' # Roda todo dia às 07
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,13 +23,13 @@ jobs:
         pip install -r requirements.txt
 
     - name: Criar arquivo de credenciais (Seguranca)
-      # Aqui o robô pega o segredo do GitHub e cria o arquivo JSON temporário
+      
       run: |
         echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}' > chave-google.json
 
     - name: Rodar o script de coleta
       env:
-        # Avisa o Python onde está o arquivo da chave
+        
         GOOGLE_APPLICATION_CREDENTIALS: ./chave-google.json
       run: |
         python teste_inmet.py
