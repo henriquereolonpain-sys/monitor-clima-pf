@@ -1,0 +1,39 @@
+name: Coleta Diaria Passo Fundo
+
+on:
+  schedule:
+    - cron: '0 10 * * *' # A coleta será executada diariamente às 10:00 UTC (7:00 BRT)            
+  workflow_dispatch: 
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Baixar seu código (Checkout)
+      uses: actions/checkout@v3
+
+    - name: Instalar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Instalar bibliotecas (Pandas/Requests)
+      run: |
+        pip install -r requirements.txt
+
+    - name: Rodar o script de coleta
+      run: |
+        python teste_inmet.py 
+        # ATENÇÃO: Se o nome do seu arquivo Python for diferente, mude aqui em cima!
+
+    - name: Salvar resultado (Commit e Push)
+      run: |
+        git config --global user.name 'Robo GitHub'
+        git config --global user.email 'robo@users.noreply.github.com'
+        git add .
+        git commit -m "data: atualizacao diaria automatica" || echo "Nada para commitar"
+        git push
