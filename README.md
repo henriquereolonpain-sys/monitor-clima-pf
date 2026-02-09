@@ -1,4 +1,4 @@
-# Pipeline de Dados Meteorológicos - Passo Fundo/RS
+## Pipeline de Dados Meteorológicos - PF/RS
 
 Pipeline ETL que extrai dados diários da API Open-Meteo e carrega no Google BigQuery. O processo é totalmente automatizado via GitHub Actions.
 
