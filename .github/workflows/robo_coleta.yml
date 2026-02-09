@@ -1,19 +1,16 @@
-name: Coleta Diaria Passo Fundo
+name: Coleta Diaria BigQuery
 
 on:
   schedule:
-    - cron: '0 10 * * *' # A coleta será executada diariamente às 10:00 UTC (7:00 BRT)            
-  workflow_dispatch: 
-
-permissions:
-  contents: write
+    - cron: '0 10 * * *' # Roda todo dia às 07:00 Brasil
+  workflow_dispatch: # Botão manual
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Baixar seu código (Checkout)
+    - name: Baixar seu código
       uses: actions/checkout@v3
 
     - name: Instalar Python
@@ -21,19 +18,22 @@ jobs:
       with:
         python-version: '3.9'
 
-    - name: Instalar bibliotecas (Pandas/Requests)
+    - name: Instalar bibliotecas
       run: |
         pip install -r requirements.txt
 
-    - name: Rodar o script de coleta
+    - name: Criar arquivo de credenciais (Seguranca)
+      # Aqui o robô pega o segredo do GitHub e cria o arquivo JSON temporário
       run: |
-        python teste_inmet.py 
-        # ATENÇÃO: Se o nome do seu arquivo Python for diferente, mude aqui em cima!
+        echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}' > chave-google.json
 
-    - name: Salvar resultado (Commit e Push)
+    - name: Rodar o script de coleta
+      env:
+        # Avisa o Python onde está o arquivo da chave
+        GOOGLE_APPLICATION_CREDENTIALS: ./chave-google.json
       run: |
-       git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add .
-        git commit -m "data: atualizacao diaria automatica" || echo "Nada para commitar"
-        git push
+        python teste_inmet.py
+
+    - name: Salvar logs (Opcional - CSV nao precisa mais)
+      run: |
+        echo "Dados enviados para o BigQuery com sucesso!"
