@@ -10,7 +10,7 @@ O projeto monitora a temperatura máxima e precipitação diária. Executa um jo
 
 1. **Extração**: Script Python coleta dados brutos da API Open-Meteo.
 2. **Transformação**: Limpeza e tipagem de dados utilizando Pandas.
-3. **Carga**: Dados são enviados para o Google BigQuery (`clima_dados.historico_diario`).
+3. **Carga**: Dados são enviados para o Google BigQuery >`clima_dados.historico_diario`.
 4. **Orquestração**: GitHub Actions dispara o workflow diariamente às 07:00 (Horário de Brasília).
 
 ## Stack Tecnológico
