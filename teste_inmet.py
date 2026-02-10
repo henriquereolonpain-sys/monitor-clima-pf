@@ -19,11 +19,16 @@ data_fim = hoje.strftime('%Y-%m-%d')
 print(f" Iniciando pipeline: {data_inicio} até {data_fim}")
 
 try: #Open-Meteo coleta o clima
-    print(" Coletando dados de clima...")
-    url_clima = f"https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&past_days=90&daily=temperature_2m_max,precipitation_sum&timezone=America%2FSao_Paulo"    res = requests.get(url_clima)
-    df_clima = pd.DataFrame(res.json()['daily'])
+    # 1. COLETA CLIMA (Open-Meteo Forecast - Sem o delay de 14 dias)
+    print(" ☁️ Coletando clima (últimos 90 dias)...")
     
-    #trata dados clima
+    # URL atualizada para usar a API de Forecast que não tem atraso
+    url_clima = f"https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&past_days=90&daily=temperature_2m_max,precipitation_sum&timezone=America%2FSao_Paulo"
+    
+    # IMPORTANTE: Garanta que o 'res' esteja na linha de baixo
+    res = requests.get(url_clima)
+    
+    df_clima = pd.DataFrame(res.json()['daily'])
     df_clima = df_clima.rename(columns={'time': 'data', 'temperature_2m_max': 'temp_max', 'precipitation_sum': 'chuva_mm'})
     df_clima['data'] = pd.to_datetime(df_clima['data'])
     df_clima['data_carga'] = datetime.now()
