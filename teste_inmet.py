@@ -12,22 +12,22 @@ NOME_DATASET = 'clima_dados'
 
 LAT, LON = -28.2628, -52.4087 # PF
 
-# Data 30 dias :D
+# Data 90 dias :30 estava pouco :D
 hoje = datetime.now()
-inicio = hoje - timedelta(days=30)
+inicio = hoje - timedelta(days=90)
 data_inicio = inicio.strftime('%Y-%m-%d')
 data_fim = hoje.strftime('%Y-%m-%d')
 
 print(f" Iniciando pipeline: {data_inicio} até {data_fim}")
 
-try: #Open-Meteo
+try: #Open-Meteo ccoleta o clima
     
     print(" Coletando dados de clima...")
     url_clima = f"https://archive-api.open-meteo.com/v1/archive?latitude={LAT}&longitude={LON}&start_date={data_inicio}&end_date={data_fim}&daily=temperature_2m_max,precipitation_sum&timezone=America%2FSao_Paulo"
     res = requests.get(url_clima)
     df_clima = pd.DataFrame(res.json()['daily'])
     
-  
+  #trata dados clima
     df_clima = df_clima.rename(columns={'time': 'data', 'temperature_2m_max': 'temp_max', 'precipitation_sum': 'chuva_mm'})
     df_clima['data'] = pd.to_datetime(df_clima['data'])
     df_clima['data_carga'] = datetime.now()
