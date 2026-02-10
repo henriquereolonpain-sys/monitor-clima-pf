@@ -32,7 +32,7 @@ try: #Open-Meteo
     df_clima['data'] = pd.to_datetime(df_clima['data'])
     df_clima['data_carga'] = datetime.now()
 
-    
+    #dados milhu 
     print(" Buscando dados do CEPEA (Milho/Brasil)...")
     df_milho = cepea.indicador('milho')
     
@@ -49,13 +49,13 @@ try: #Open-Meteo
         df_milho_final = pd.DataFrame()
 
     # CARGA PARA O BIGQUERY - GOOGLE CLOUD 
-    print("📤 Enviando Clima para o Google...")
+    print(" Enviando Clima para o Google")
     pandas_gbq.to_gbq(df_clima, f"{NOME_DATASET}.historico_diario", project_id=ID_PROJETO, if_exists='replace')
     print(" Tabela CLIMA atualizada!")
 
     
     if not df_milho_final.empty:
-        print("📤 Enviando Milho para o Google...")
+        print(" Enviando Milho para o Google")
         pandas_gbq.to_gbq(df_milho_final, f"{NOME_DATASET}.precos_milho_cepea", project_id=ID_PROJETO, if_exists='replace')
         print(" Tabela CEPEA (Milho) atualizada!")
     else:
