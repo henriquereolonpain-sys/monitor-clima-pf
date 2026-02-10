@@ -1,62 +1,67 @@
+#%%
 import pandas as pd
+import pandas_gbq 
 import requests
+from agrobr.sync import cepea
 from datetime import datetime, timedelta
 
 
-
-ID_PROJETO = 'monitor-passofundo' 
+ID_PROJETO = 'monitor-passofundo'
 NOME_DATASET = 'clima_dados'
-NOME_TABELA = 'historico_diario'
 
-# PF-RS
-LAT = -28.2628
-LON = -52.4087
 
-# Data = 30 dias atrás até hoje
+LAT, LON = -28.2628, -52.4087 # PF
+
+# Data 30 dias :D
 hoje = datetime.now()
 inicio = hoje - timedelta(days=30)
-
 data_inicio = inicio.strftime('%Y-%m-%d')
 data_fim = hoje.strftime('%Y-%m-%d')
 
-print(f" Buscando dados de {data_inicio} até {data_fim}...")
+print(f" Iniciando pipeline: {data_inicio} até {data_fim}")
 
-# EXTRAIR
-url = f"https://archive-api.open-meteo.com/v1/archive?latitude={LAT}&longitude={LON}&start_date={data_inicio}&end_date={data_fim}&daily=temperature_2m_max,precipitation_sum&timezone=America%2FSao_Paulo"
-
-try:
-    response = requests.get(url)
-    response.raise_for_status()
-    dados = response.json()
+try: #Open-Meteo
     
+    print(" Coletando dados de clima...")
+    url_clima = f"https://archive-api.open-meteo.com/v1/archive?latitude={LAT}&longitude={LON}&start_date={data_inicio}&end_date={data_fim}&daily=temperature_2m_max,precipitation_sum&timezone=America%2FSao_Paulo"
+    res = requests.get(url_clima)
+    df_clima = pd.DataFrame(res.json()['daily'])
     
-    df = pd.DataFrame(dados['daily'])
-    
-    
-    df = df.rename(columns={
-        'time': 'data', 
-        'temperature_2m_max': 'temp_max', 
-        'precipitation_sum': 'chuva_mm'
-    })
+  
+    df_clima = df_clima.rename(columns={'time': 'data', 'temperature_2m_max': 'temp_max', 'precipitation_sum': 'chuva_mm'})
+    df_clima['data'] = pd.to_datetime(df_clima['data'])
+    df_clima['data_carga'] = datetime.now()
 
     
-    df['data'] = pd.to_datetime(df['data'])
+    print(" Buscando dados do CEPEA (Milho/Brasil)...")
+    df_milho = cepea.indicador('milho')
     
+    if not df_milho.empty:
+        df_milho['data'] = pd.to_datetime(df_milho['data'])
+        mask = (df_milho['data'] >= pd.to_datetime(data_inicio))
+        df_milho_filtrado = df_milho.loc[mask].copy()
+        
+        df_milho_filtrado = df_milho_filtrado.rename(columns={'valor': 'preco_saca_reais'})
+        df_milho_filtrado['data_carga'] = datetime.now()
+        df_milho_final = df_milho_filtrado[['data', 'preco_saca_reais', 'data_carga']]
+    else:
+        print(" CEPEA não retornou dados.")
+        df_milho_final = pd.DataFrame()
 
-    df['data_carga'] = datetime.now()
+    # CARGA PARA O BIGQUERY - GOOGLE CLOUD 
+    print("📤 Enviando Clima para o Google...")
+    pandas_gbq.to_gbq(df_clima, f"{NOME_DATASET}.historico_diario", project_id=ID_PROJETO, if_exists='replace')
+    print(" Tabela CLIMA atualizada!")
 
-    print(f"✅ Dados transformados! {len(df)} linhas prontas.")
+    
+    if not df_milho_final.empty:
+        print("📤 Enviando Milho para o Google...")
+        pandas_gbq.to_gbq(df_milho_final, f"{NOME_DATASET}.precos_milho_cepea", project_id=ID_PROJETO, if_exists='replace')
+        print(" Tabela CEPEA (Milho) atualizada!")
+    else:
+        print(" Tabela Milho NÃO foi atualizada (sem dados novos).")
 
-    tabela_completa = f"{NOME_DATASET}.{NOME_TABELA}"
-    
-    print(f" Enviando para o BigQuery: {tabela_completa}...")
-    
-    
-    df.to_gbq(destination_table=tabela_completa, 
-              project_id=ID_PROJETO, 
-              if_exists='replace')
-              
-    print(" Sucesso! Dados estão na nuvem.")
+    print(" Pipeline concluído com sucesso!")
 
 except Exception as e:
-    print(f" Erro fatal: {e}")
+    print(f" Erro crítico: {e}")

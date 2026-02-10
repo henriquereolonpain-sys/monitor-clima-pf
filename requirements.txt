@@ -1,4 +1,6 @@
 pandas
 requests
 pandas-gbq
-google-auth
+google-cloud-bigquery
+agrobr
+yfinance
