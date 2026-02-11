@@ -8,10 +8,10 @@ Este projeto automatiza a coleta, processamento e visualizacao de dados de preco
 
 O projeto utiliza uma abordagem de armazenamento em camadas para garantir a resiliencia dos dados:
 
-1. **Coleta (Python):** Scripts executados via GitHub Actions extraem dados diariamente.
-2. **Armazenamento (BigQuery):** Data Warehouse centralizando dados historicos (CSV) e dados em tempo real (API).
-3. **Processamento (SQL):** Views otimizadas realizam o tratamento de tipos de dados e a unificacao das series temporais.
-4. **Visualizacao (Looker Studio):** Dashboard interativo para analise de correlacao e tendencia.
+1. **Coleta (Python):** Scripts executados via GitHub Actions extraem dados diariamente as 7 da manhã e mandam pra query.
+2. **Armazenamento (BigQuery):** Data Warehouse centralizando dados historicos (CSV) e dados em tempo real (API) vindos das actions.
+3. **Processamento (SQL):** Views otimizadas realizam o tratamento de tipos de dados e a unificacao das series temporais, dentro do proprio bigquery.
+4. **Visualizacao (Looker Studio):** Dashboard interativo para analise de correlacao e tendencia, atualizado automaticamente pelo sql da bigquery do cloud.
 
 ![PIPE](dashboard_milho.png/pipeline.png)
 
@@ -20,8 +20,8 @@ O projeto utiliza uma abordagem de armazenamento em camadas para garantir a resi
 ## Fontes de Dados
 
 * **Precos do Milho:** Indicador CEPEA/ESALQ via biblioteca AgroBR.
-* **Dados Climaticos:** Open-Meteo API (Forecast e Archive) para captura de precipitacao e temperatura maxima.
-* **Historico:** Base de dados estatica importada manualmente para garantir a continuidade da serie desde 2025.
+* **Dados Climaticos:** Open-Meteo API (Forecast e Archive) para captura de precipitacao e temperatura maxima a partir da ultima data estatica.
+* **Historico:** Base de dados estatica importada manualmente da CEPEA no cloud(bigquery) para garantir a continuidade da serie desde 2025.
 
 ---
 
@@ -71,13 +71,33 @@ Foi implementada uma View SQL para resolver conflitos de tipos de dados e garant
     ORDER BY data ASC
 ```
 ---
-## Gráfico no LOOKER
+# Gráfico no LOOKER
 
 Esse gráfico atualiza automaticamente todo dia depois da automação nas actions ser feita
 
-# Visualizacao do Projeto
+## Visualizacao do Projeto
 
 ![Dashboard de Monitoramento](dashboard_milho.png/dados_looker_milho.png)
+
+---
+
+## Analise Economica e Insights
+
+A observacao preliminar da serie histórica indica uma correlacao visual entre os regimes de precipitacao em Passo Fundo/RS e a volatilidade dos precos do milho (Indicador CEPEA). 
+
+* **Comportamento de Curto Prazo:** E possivel notar aumentos residuais nas cotacoes logo apos periodos de chuva intensa, o que pode sugerir ajustes de oferta ou dificuldades logisticas momentaneas na regiao.
+* **Proximos Passos Analiticos:** O projeto evoluira para a aplicacao de modelos econometricos de covariancia e regressao linear. O objetivo e quantificar o impacto elastico das variaveis climaticas sobre a formacao do preco local, isolando efeitos sazonais.
+
+---
+
+## Problemas enfrentados 
+A principal barreira técnica deste projeto foi a escassez de APIs gratuitas que fornecessem séries históricas longas para o mercado físico de milho no Brasil (Ticker).
+
+* Limitação da API: A solução encontrada via biblioteca AgroBR permitiu a captura automatizada de dados apenas a partir de 27 de janeiro de 2026.
+
+* Estratégia de Mitigação: Para evitar uma análise superficial limitada a um curto período de tempo, foi adotada uma arquitetura híbrida. Realizou-se a extração manual de dados históricos diretamente do CEPEA, que foram tratados e importados como uma base estática no BigQuery.
+
+* Resultado: Através de uma operação de UNION via SQL, foi possível consolidar o histórico legado com a automação presente, garantindo uma série temporal robusta para a aplicação de modelos econométricos.
 ---
 
 ## Como Instalar e Executar
@@ -93,7 +113,7 @@ Esse gráfico atualiza automaticamente todo dia depois da automação nas action
 * GitHub Repository para configuracao de Actions.
 
 
-# Configuracao Local
+## Configuracao Local
 
 1. **Clonar o repositorio:**
 ```BASH
@@ -109,12 +129,12 @@ Esse gráfico atualiza automaticamente todo dia depois da automação nas action
 3. **Configurar credenciais:**
 Salve o JSON da Service Account como google_credentials.json na raiz do projeto.
 
-# Configuracao do GitHub Actions
+## Configuracao do GitHub Actions
 Cadastre o segredo no GitHub (Settings > Secrets > Actions):
-Nome do Secret	     -    Descricao
-GOOGLE_CREDENTIALS	 -   Conteudo completo do arquivo JSON da Service Account.
+Nome do Secret--> GOOGLE_CREDENTIALS    
+Descricao -->   Conteudo completo do arquivo JSON da Service Account.
 
-# Estrutura do Repositorio
+## Estrutura do Repositorio
 1. .github/workflows/: Configuracao da rotina de execucao diaria.
 
 2. examples/teste_inmet.py: Script principal de ETL.
