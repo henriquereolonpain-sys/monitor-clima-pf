@@ -53,7 +53,7 @@ try:
             df_milho_final = pd.DataFrame()
             
     except Exception as e:
-        print(f" ⚠️ Erro ao buscar Milho: {e}")
+        print(f"Erro{e}")
         df_milho_final = pd.DataFrame()
 
     # 3. CARREGA PARA O BIGQUERY
