@@ -116,9 +116,9 @@ A principal barreira técnica deste projeto foi a escassez de APIs gratuitas que
 ## Configuracao Local
 
 1. **Clonar o repositorio:**
-```BASH
-    git clone [https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
-    cd seu-repositorio
+```bash
+   git clone [https://github.com/henriquereolonpain-sys/monitor-clima-pf.git](https://github.com/henriquereolonpain-sys/monitor-clima-pf.git)
+   cd monitor-clima-pf
 ```
 
 2. **Instalar Dependencias:**
