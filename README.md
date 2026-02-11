@@ -13,7 +13,7 @@ O projeto utiliza uma abordagem de armazenamento em camadas para garantir a resi
 3. **Processamento (SQL):** Views otimizadas realizam o tratamento de tipos de dados e a unificacao das series temporais.
 4. **Visualizacao (Looker Studio):** Dashboard interativo para analise de correlacao e tendencia.
 
-[Image of a data pipeline diagram from API to Cloud Storage to Dashboard]
+![PIPE](dashboard_milho.png/pipeline.png)
 
 ---
 
