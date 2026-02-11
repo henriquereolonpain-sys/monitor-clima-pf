@@ -77,7 +77,7 @@ Esse gráfico atualiza automaticamente todo dia depois da automação nas action
 
 # Visualizacao do Projeto
 
-![Dashboard de Monitoramento](dados_looker_milho.png)
+![Dashboard de Monitoramento](dashboard_milho.png/dados_looker_milho.png)
 ---
 
 ## Como Instalar e Executar
