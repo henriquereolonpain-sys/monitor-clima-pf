@@ -4,3 +4,4 @@ pandas-gbq
 google-cloud-bigquery
 agrobr
 yfinance
+pyarroww
