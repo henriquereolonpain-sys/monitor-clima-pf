@@ -1,5 +1,6 @@
 name: Coleta Diaria BigQuery
 
+
 on:
   schedule:
     - cron: '0 10 * * *' # Roda todo dia às 07 :DDD

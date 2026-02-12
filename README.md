@@ -1,17 +1,17 @@
-# Monitoramento de Precos de Milho e Variaveis Climaticas - Passo Fundo/RS
+# Monitoramento de Preços de Milho e Variáveis Climáticas - Passo Fundo/RS
 
-Este projeto automatiza a coleta, processamento e visualizacao de dados de precos de milho (CEPEA) correlacionados com variaveis meteorologicas da regiao de Passo Fundo. A estrutura utiliza um pipeline de dados em nuvem para sustentar um dashboard de analise economica.
+Este projeto automatiza a coleta, processamento e visualização de dados de preços de milho (CEPEA) correlacionados com variáveis meteorológicas da região de Passo Fundo. A estrutura utiliza um pipeline de dados em nuvem para sustentar um dashboard de análise econômica.
 
 ---
 
 ## Arquitetura do Sistema
 
-O projeto utiliza uma abordagem de armazenamento em camadas para garantir a resiliencia dos dados:
+O projeto utiliza uma abordagem de armazenamento em camadas para garantir a resiliência dos dados:
 
-1. **Coleta (Python):** Scripts executados via GitHub Actions extraem dados diariamente as 7 da manhã e mandam pra query.
-2. **Armazenamento (BigQuery):** Data Warehouse centralizando dados historicos (CSV) e dados em tempo real (API) vindos das actions.
-3. **Processamento (SQL):** Views otimizadas realizam o tratamento de tipos de dados e a unificacao das series temporais, dentro do proprio bigquery.
-4. **Visualizacao (Looker Studio):** Dashboard interativo para analise de correlacao e tendencia, atualizado automaticamente pelo sql da bigquery do cloud.
+1. **Coleta (Python):** Scripts executados via GitHub Actions extraem dados diariamente às 7 da manhã e mandam pra query.
+2. **Armazenamento (BigQuery):** Data Warehouse centralizando dados históricos (CSV) e dados em tempo real (API) vindos das >actions<.
+3. **Processamento (SQL):** Views otimizadas realizam o tratamento de tipos de dados e a unificação das séries temporais, dentro do próprio BigQuery.
+4. **Visualização (Looker Studio):** Dashboard interativo para análise de correlação e tendência, atualizado automaticamente pelo SQL do BigQuery no Cloud.
 
 ![PIPE](dashboard_milho.png/pipeline.png)
 
@@ -20,14 +20,14 @@ O projeto utiliza uma abordagem de armazenamento em camadas para garantir a resi
 ## Fontes de Dados
 
 * **Precos do Milho:** Indicador CEPEA/ESALQ via biblioteca AgroBR.
-* **Dados Climaticos:** Open-Meteo API (Forecast e Archive) para captura de precipitacao e temperatura maxima a partir da ultima data estatica.
-* **Historico:** Base de dados estatica importada manualmente da CEPEA no cloud(bigquery) para garantir a continuidade da serie desde 2025.
+* **Dados Climáticos:** Open-Meteo API (Forecast e Archive) para captura de precipitação e temperatura máxima a partir da última data estática.
+* **Histórico:** Base de dados estática importada manualmente da CEPEA no cloud (BigQuery) para garantir a continuidade da série desde 2025.
 
 ---
 
-## Estrutura de Automacao
+## Estrutura de Automação
 
-A automacao e gerenciada via GitHub Actions. O workflow garante que o banco de dados e os backups em CSV sejam atualizados sem intervencao manual.
+A automação é gerenciada via GitHub Actions. O workflow garante que o banco de dados e os backups em CSV sejam atualizados sem intervenção manual.
 
 ```yaml
 name: Atualizacao Diaria
@@ -73,20 +73,20 @@ Foi implementada uma View SQL para resolver conflitos de tipos de dados e garant
 ---
 # Gráfico no LOOKER
 
-Esse gráfico atualiza automaticamente todo dia depois da automação nas actions ser feita
+Esse gráfico atualiza automaticamente todo dia depois da automação nas >actions< ser feita.
 
-## Visualizacao do Projeto
+## Visualização do Projeto
 
 ![Dashboard de Monitoramento](dashboard_milho.png/dados_looker_milho.png)
 
 ---
 
-## Analise Economica e Insights
+## Análise Econômica e Insights
 
-A observacao preliminar da serie histórica indica uma correlacao visual entre os regimes de precipitacao em Passo Fundo/RS e a volatilidade dos precos do milho (Indicador CEPEA). 
+A observação preliminar da série histórica indica uma correlação visual entre os regimes de precipitação em Passo Fundo/RS e a volatilidade dos preços do milho (Indicador CEPEA).
 
-* **Comportamento de Curto Prazo:** E possivel notar aumentos residuais nas cotacoes logo apos periodos de chuva intensa, o que pode sugerir ajustes de oferta ou dificuldades logisticas momentaneas na regiao.
-* **Proximos Passos Analiticos:** O projeto evoluira para a aplicacao de modelos econometricos de covariancia e regressao linear. O objetivo e quantificar o impacto elastico das variaveis climaticas sobre a formacao do preco local, isolando efeitos sazonais.
+* **Comportamento de Curto Prazo:** É possível notar aumentos residuais nas cotações logo após períodos de chuva intensa, o que pode sugerir ajustes de oferta ou dificuldades logísticas momentâneas na região.
+* **Proximos Passos Analiticos:** O projeto evoluirá para a aplicação de modelos econométricos de covariância e regressão linear. O objetivo é quantificar o impacto elástico das variáveis climáticas sobre a formação do preço local, isolando efeitos sazonais.
 
 ---
 
@@ -102,7 +102,7 @@ A principal barreira técnica deste projeto foi a escassez de APIs gratuitas que
 
 ## Como Instalar e Executar
 
-* Pre-requisitos
+* Pré-requisitos
 
 * Python 3.9+
 
@@ -115,13 +115,13 @@ A principal barreira técnica deste projeto foi a escassez de APIs gratuitas que
 
 ## Configuracao Local
 
-1. **Clonar o repositorio:**
+1. **Clonar o repositório:**
 ```bash
    git clone [https://github.com/henriquereolonpain-sys/monitor-clima-pf.git](https://github.com/henriquereolonpain-sys/monitor-clima-pf.git)
    cd monitor-clima-pf
 ```
 
-2. **Instalar Dependencias:**
+2. **Instalar Dependências:**
 ```Bash
     pip install -r requirements.txt
 ```
@@ -129,16 +129,16 @@ A principal barreira técnica deste projeto foi a escassez de APIs gratuitas que
 3. **Configurar credenciais:**
 Salve o JSON da Service Account como google_credentials.json na raiz do projeto.
 
-## Configuracao do GitHub Actions
+## Configuração do GitHub Actions
 Cadastre o segredo no GitHub (Settings > Secrets > Actions):
 Nome do Secret--> GOOGLE_CREDENTIALS    
-Descricao -->   Conteudo completo do arquivo JSON da Service Account.
+Descrição -->   Conteúdo completo do arquivo JSON da Service Account.
 
-## Estrutura do Repositorio
-1. .github/workflows/: Configuracao da rotina de execucao diaria.
+## Estrutura do Repositório
+1. .github/workflows/: Configuração da rotina de execução diária.
 
 2. examples/teste_inmet.py: Script principal de ETL.
 
-3. requirements.txt: Lista de bibliotecas necessarias.
+3. requirements.txt: Lista de bibliotecas necessárias.
 
 4. *.csv: Arquivos de backup gerados automaticamente pelo pipeline.
