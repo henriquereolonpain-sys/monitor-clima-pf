@@ -63,8 +63,6 @@ try:
     pandas_gbq.to_gbq(df_milho_final, f"{NOME_DATASET}.precos_milho_cepea", project_id=ID_PROJETO, if_exists='replace')
     print("Tabela MILH atualizada!")
     
-    else:
-    print("sem dados novos")
     
 except Exception as e:
     print(f"Erro{e}")
