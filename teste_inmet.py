@@ -2,7 +2,7 @@
 import pandas as pd
 import pandas_gbq 
 import requests
-from agrobr.sync import cepea
+from io import StringIO
 from datetime import datetime, timedelta
 
 # configs
@@ -10,11 +10,13 @@ ID_PROJETO = 'monitor-passofundo'
 NOME_DATASET = 'clima_dados'
 LAT, LON = -28.2628, -52.4087 # Passo Fundo - RS
 
-# 90 dias pq 30 estava pouco
+# 90 dias de histórico
 hoje = datetime.now()
 inicio = hoje - timedelta(days=90)
 data_inicio = inicio.strftime('%Y-%m-%d')
-data_fim = hoje.strftime('%Y-%m-%d')
+
+df_clima = pd.DataFrame()
+df_milho_final = pd.DataFrame()
 
 #API OpenM
 try:
@@ -25,15 +27,11 @@ try:
     
     df_clima = pd.DataFrame(res.json()['daily'])
     
-    
     df_clima = df_clima.rename(columns={'time': 'data', 'temperature_2m_max': 'temp_max', 'precipitation_sum': 'chuva_mm'})
     df_clima['data'] = pd.to_datetime(df_clima['data'])
     df_clima['data_carga'] = datetime.now()
-    
-    # CSV local BK
-    df_clima.to_csv('clima_historico_90dias.csv', index=False)
 
-#api do mihlo
+#web scraping do milho
 try:
     url_na = "https://www.noticiasagricolas.com.br/cotacoes/milho/indicador-cepea-esalq-milho"
     headers = {
@@ -43,9 +41,8 @@ try:
     res_milho = requests.get(url_na, headers=headers, timeout=30)
     res_milho.raise_for_status()
     
-    from io import StringIO
     tabelas = pd.read_html(StringIO(res_milho.text), decimal=',', thousands='.')
-    
+
     df_milho = pd.DataFrame()
     for tb in tabelas:
         if 'Data' in tb.columns or 'Data ' in tb.columns:
@@ -67,24 +64,24 @@ try:
             df_milho_filtrado['data_carga'] = datetime.now()
             
             df_milho_final = df_milho_filtrado[['data', 'preco_saca_reais', 'data_carga']]
-            
-            df_milho_final.to_csv('milho_recentes.csv', index=False)
-            print("Dados de MILHO baixados do Notícias Agrícolas com sucesso.")
+            print("Dados de MILHO baixados do Noticias Agricolas com sucesso.")
         else:
-            print("Dados de milho vazios após filtro de data.")
+            print("Dados de milho vazios apos filtro de data.")
     else:
-        print("Não foi possível localizar a tabela de preços no HTML.")
+        print("Nao foi possivel localizar a tabela de precos no HTML.")
 
 except Exception as e:
     print(f"Erro ao baixar MILHO: {e}")
 
     # CARREGA PARA O BIGQUERY
-    pandas_gbq.to_gbq(df_clima, f"{NOME_DATASET}.historico_diario", project_id=ID_PROJETO, if_exists='replace')
-    print("Tabela CLIMA atualizada")
+try:
+    if not df_clima.empty:
+        pandas_gbq.to_gbq(df_clima, f"{NOME_DATASET}.historico_diario", project_id=ID_PROJETO, if_exists='replace')
+        print("Sucesso: Tabela CLIMA atualizada no BigQuery.")
+    
+    if not df_milho_final.empty:
+        pandas_gbq.to_gbq(df_milho_final, f"{NOME_DATASET}.precos_milho_cepea", project_id=ID_PROJETO, if_exists='replace')
+        print("Sucesso: Tabela MILHO atualizada no BigQuery.")
 
-    pandas_gbq.to_gbq(df_milho_final, f"{NOME_DATASET}.precos_milho_cepea", project_id=ID_PROJETO, if_exists='replace')
-    print("Tabela MILH atualizada!")
-    
-    
 except Exception as e:
-    print(f"Erro{e}")
+    print(f"Erro no Upload para o BigQuery: {e}")
