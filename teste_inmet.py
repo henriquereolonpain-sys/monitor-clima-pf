@@ -54,35 +54,23 @@ try:
     tabelas = pd.read_html(StringIO(res_milho.text), decimal=',', thousands='.')
     
     df_milho = pd.DataFrame()
-    # Pega a tabela principal de cotacoes (geralmente a primeira com dados)
     if tabelas:
         df_milho_bruto = tabelas[0]
         
-        # Filtra apenas a linha que contem 'Passo Fundo/RS' na primeira coluna (Praca)
-        # O astype(str) garante que nao de erro se a coluna tiver numeros
         linha_pf = df_milho_bruto[df_milho_bruto.iloc[:, 0].astype(str).str.contains('Passo Fundo', case=False, na=False)]
         
         if not linha_pf.empty:
-            # Pega o valor da coluna 'Preco R$' (geralmente a coluna indice 1 ou 2, dependendo de como o Pandas le)
-            # Vamos buscar a coluna que contem a palavra 'Pre' ou 'R$' para ser mais seguro
-            coluna_preco = [col for col in linha_pf.columns if 'Pre' in str(col) or 'R$' in str(col)]
+            preco_pf = linha_pf.iloc[0, 1]
             
-            if coluna_preco:
-                preco_pf = linha_pf[coluna_preco[0]].values[0]
-                
-                # Como a tabela so mostra o preco do dia, criamos o dataframe com a data atual
-                # Usamos a data base do scraping (hoje) sem horas para manter o padrao de serie diaria
-                data_cotacao = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-                
-                df_milho_final = pd.DataFrame({
-                    'data': [data_cotacao],
-                    'preco_saca_reais': [float(preco_pf)],
-                    'data_carga': [datetime.now()]
-                })
-                
-                print(f"Dados de MILHO (Passo Fundo - CMA) baixados com sucesso: R$ {preco_pf}")
-            else:
-                print("Coluna de preco nao encontrada na linha de Passo Fundo.")
+            data_cotacao = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            df_milho_final = pd.DataFrame({
+                'data': [data_cotacao],
+                'preco_saca_reais': [float(preco_pf)],
+                'data_carga': [datetime.now()]
+            })
+            
+            print(f"Dados de MILHO (Passo Fundo - CMA) baixados com sucesso: R$ {preco_pf}")
         else:
             print("Praca 'Passo Fundo/RS' nao encontrada na tabela do CMA.")
     else:

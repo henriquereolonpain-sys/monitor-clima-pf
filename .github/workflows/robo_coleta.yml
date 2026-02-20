@@ -35,7 +35,7 @@ jobs:
       run: |
         python teste_inmet.py
 
-    - name: Salvar logs (Opcional - CSV nao precisa mais)
+    - name: Salvar logs
       run: |
         echo "Dados enviados para o BigQuery com sucesso!"
         
