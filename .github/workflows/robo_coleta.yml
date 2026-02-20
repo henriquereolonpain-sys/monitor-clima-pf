@@ -38,12 +38,12 @@ jobs:
     - name: Salvar logs (Opcional - CSV nao precisa mais)
       run: |
         echo "Dados enviados para o BigQuery com sucesso!"
-      
+        
     - name: Commit and push changes
       run: |
         git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        rm chave-google.json
-        git add .
-        git commit -m "Atualizacao diaria de dados"
-        git push
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          rm -f chave-google.json
+          git add .
+          git commit -m "Atualizacao diaria de dados" || true
+          git push || true
