@@ -53,16 +53,17 @@ try:
     
     tabelas = pd.read_html(StringIO(res_milho.text), decimal=',', thousands='.')
     
-    # Pega a primeira tabela que contenha 'Data'
     df_milho = pd.DataFrame()
     for tb in tabelas:
-        if 'Data' in tb.columns or 'Data ' in tb.columns:
+        # Verifica se alguma das colunas contem a palavra 'Data'
+        if any('Data' in str(col) for col in tb.columns):
             df_milho = tb
             break
             
     if not df_milho.empty:
-        df_milho.columns = [col.strip() for col in df_milho.columns]
-        df_milho = df_milho.rename(columns={'Data': 'data', 'Valor R$': 'valor', 'Preço R$': 'valor'})
+        # SOLUÇÃO BLINDADA: Pega apenas as duas primeiras colunas (Data e Preço) independente do nome
+        df_milho = df_milho.iloc[:, [0, 1]].copy()
+        df_milho.columns = ['data', 'preco_saca_reais'] # Força o nome correto
         
         df_milho['data'] = pd.to_datetime(df_milho['data'], format='%d/%m/%Y', errors='coerce')
         df_milho = df_milho.dropna(subset=['data'])
@@ -71,7 +72,6 @@ try:
         df_milho_filtrado = df_milho.loc[mask].copy()
         
         if not df_milho_filtrado.empty:
-            df_milho_filtrado = df_milho_filtrado.rename(columns={'valor': 'preco_saca_reais'})
             df_milho_filtrado['data_carga'] = datetime.now()
             
             df_milho_final = df_milho_filtrado[['data', 'preco_saca_reais', 'data_carga']]
