@@ -40,10 +40,10 @@ except Exception as e:
     print(f"Erro ao baixar CLIMA: {e}")
 
 # ---------------------------------------------------------
-# 2. WEB SCRAPING DO MILHO (NOTICIAS AGRICOLAS)
+# 2. WEB SCRAPING DO MILHO (NOTICIAS AGRICOLAS - CMA PASSO FUNDO)
 # ---------------------------------------------------------
 try:
-    url_na = "https://www.noticiasagricolas.com.br/cotacoes/milho/indicador-cepea-esalq-milho"
+    url_na = "https://www.noticiasagricolas.com.br/cotacoes/milho/milho-cma"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
     }
@@ -54,35 +54,42 @@ try:
     tabelas = pd.read_html(StringIO(res_milho.text), decimal=',', thousands='.')
     
     df_milho = pd.DataFrame()
-    for tb in tabelas:
-        # Verifica se alguma das colunas contem a palavra 'Data'
-        if any('Data' in str(col) for col in tb.columns):
-            df_milho = tb
-            break
+    # Pega a tabela principal de cotacoes (geralmente a primeira com dados)
+    if tabelas:
+        df_milho_bruto = tabelas[0]
+        
+        # Filtra apenas a linha que contem 'Passo Fundo/RS' na primeira coluna (Praca)
+        # O astype(str) garante que nao de erro se a coluna tiver numeros
+        linha_pf = df_milho_bruto[df_milho_bruto.iloc[:, 0].astype(str).str.contains('Passo Fundo', case=False, na=False)]
+        
+        if not linha_pf.empty:
+            # Pega o valor da coluna 'Preco R$' (geralmente a coluna indice 1 ou 2, dependendo de como o Pandas le)
+            # Vamos buscar a coluna que contem a palavra 'Pre' ou 'R$' para ser mais seguro
+            coluna_preco = [col for col in linha_pf.columns if 'Pre' in str(col) or 'R$' in str(col)]
             
-    if not df_milho.empty:
-        # SOLUÇÃO BLINDADA: Pega apenas as duas primeiras colunas (Data e Preço) independente do nome
-        df_milho = df_milho.iloc[:, [0, 1]].copy()
-        df_milho.columns = ['data', 'preco_saca_reais'] # Força o nome correto
-        
-        df_milho['data'] = pd.to_datetime(df_milho['data'], format='%d/%m/%Y', errors='coerce')
-        df_milho = df_milho.dropna(subset=['data'])
-        
-        mask = (df_milho['data'] >= pd.to_datetime(data_inicio))
-        df_milho_filtrado = df_milho.loc[mask].copy()
-        
-        if not df_milho_filtrado.empty:
-            df_milho_filtrado['data_carga'] = datetime.now()
-            
-            df_milho_final = df_milho_filtrado[['data', 'preco_saca_reais', 'data_carga']]
-            print("Dados de MILHO baixados do Noticias Agricolas com sucesso.")
+            if coluna_preco:
+                preco_pf = linha_pf[coluna_preco[0]].values[0]
+                
+                # Como a tabela so mostra o preco do dia, criamos o dataframe com a data atual
+                # Usamos a data base do scraping (hoje) sem horas para manter o padrao de serie diaria
+                data_cotacao = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+                
+                df_milho_final = pd.DataFrame({
+                    'data': [data_cotacao],
+                    'preco_saca_reais': [float(preco_pf)],
+                    'data_carga': [datetime.now()]
+                })
+                
+                print(f"Dados de MILHO (Passo Fundo - CMA) baixados com sucesso: R$ {preco_pf}")
+            else:
+                print("Coluna de preco nao encontrada na linha de Passo Fundo.")
         else:
-            print("Dados de milho vazios apos filtro de data.")
+            print("Praca 'Passo Fundo/RS' nao encontrada na tabela do CMA.")
     else:
-        print("Nao foi possivel localizar a tabela de precos no HTML.")
+        print("Nenhuma tabela encontrada na pagina do CMA.")
 
 except Exception as e:
-    print(f"Erro ao baixar MILHO: {e}")
+    print(f"Erro ao baixar MILHO CMA: {e}")
 
 # ---------------------------------------------------------
 # 3. CARGA PARA O BIGQUERY
