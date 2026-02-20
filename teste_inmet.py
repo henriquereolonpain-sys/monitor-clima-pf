@@ -93,7 +93,7 @@ try:
         print("Sucesso: Tabela CLIMA atualizada no BigQuery.")
     
     if not df_milho_final.empty:
-        pandas_gbq.to_gbq(df_milho_final, f"{NOME_DATASET}.precos_milho_cepea", project_id=ID_PROJETO, if_exists='replace')
+        pandas_gbq.to_gbq(df_milho_final, f"{NOME_DATASET}.precos_milho_cepea", project_id=ID_PROJETO, if_exists='append')
         print("Sucesso: Tabela MILHO atualizada no BigQuery.")
 
 except Exception as e:
