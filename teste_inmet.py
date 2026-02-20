@@ -80,7 +80,6 @@ try:
 except Exception as e:
     print(f"Erro ao baixar MILHO CMA: {e}")
 
-
 # 3. CARGA PARA O BIGQUERY
 
 try:
