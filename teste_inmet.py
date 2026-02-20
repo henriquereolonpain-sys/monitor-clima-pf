@@ -45,13 +45,13 @@ except Exception as e:
 try:
     url_na = "https://www.noticiasagricolas.com.br/cotacoes/milho/milho-cma"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     }
     
     res_milho = requests.get(url_na, headers=headers, timeout=30)
     res_milho.raise_for_status()
     
-    tabelas = pd.read_html(StringIO(res_milho.text), decimal=',', thousands='.')
+    tabelas = pd.read_html(StringIO(res_milho.text))
     
     df_milho = pd.DataFrame()
     if tabelas:
@@ -60,8 +60,8 @@ try:
         linha_pf = df_milho_bruto[df_milho_bruto.iloc[:, 0].astype(str).str.contains('Passo Fundo', case=False, na=False)]
         
         if not linha_pf.empty:
-            preco_str = str(linha_pf.iloc[0, 1]).strip()
-            preco_pf = float(preco_str.replace('.', '').replace(',', '.'))
+            preco_raw = str(linha_pf.iloc[0, 1]).strip()
+            preco_pf = float(preco_raw.replace(',', '.'))
             
             data_cotacao = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             
@@ -79,7 +79,7 @@ try:
 
 except Exception as e:
     print(f"Erro ao baixar MILHO CMA: {e}")
-
+    
 # ---------------------------------------------------------
 # 3. CARGA PARA O BIGQUERY
 # ---------------------------------------------------------
