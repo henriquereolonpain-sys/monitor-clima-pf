@@ -1,6 +1,6 @@
 # Monitoramento de Preços de Milho e Variáveis Climáticas - Passo Fundo/RS
 
-Este projeto automatiza a coleta, processamento e visualização de dados de preços de milho (CEPEA) correlacionados com variáveis meteorológicas da região de Passo Fundo. A estrutura utiliza um pipeline de dados em nuvem para sustentar um dashboard de análise econômica.
+Este projeto automatiza a coleta, processamento e visualização de dados de preços de Milho (Praça Passo Fundo/RS - CMA) correlacionados com variáveis meteorológicas da região de Passo Fundo. A estrutura utiliza um pipeline de dados em nuvem para sustentar um dashboard de análise econômica, usando webscraping, API e google cloud.
 
 ---
 
@@ -9,7 +9,7 @@ Este projeto automatiza a coleta, processamento e visualização de dados de pre
 O projeto utiliza uma abordagem de armazenamento em camadas para garantir a resiliência dos dados:
 
 1. **Coleta (Python):** Scripts executados via GitHub Actions extraem dados diariamente às 7 da manhã e mandam pra query.
-2. **Armazenamento (BigQuery):** Data Warehouse centralizando dados históricos (CSV) e dados em tempo real (API) vindos das >actions<.
+2. **Armazenamento (BigQuery):** Data Warehouse centralizando dados históricos (sql) e dados em tempo real (API) vindos das _actions_.
 3. **Processamento (SQL):** Views otimizadas realizam o tratamento de tipos de dados e a unificação das séries temporais, dentro do próprio BigQuery.
 4. **Visualização (Looker Studio):** Dashboard interativo para análise de correlação e tendência, atualizado automaticamente pelo SQL do BigQuery no Cloud.
 
@@ -19,9 +19,9 @@ O projeto utiliza uma abordagem de armazenamento em camadas para garantir a resi
 
 ## Fontes de Dados
 
-* **Precos do Milho:** Indicador CEPEA/ESALQ via biblioteca AgroBR.
+* **Precos do Milho:** Web Scraping customizado via BeautifulSoup e Pandas extraindo cotações do mercado físico (CMA) diretamente do Notícias Agrícolas.
 * **Dados Climáticos:** Open-Meteo API (Forecast e Archive) para captura de precipitação e temperatura máxima a partir da última data estática.
-* **Histórico:** Base de dados estática importada manualmente da CEPEA no cloud (BigQuery) para garantir a continuidade da série desde 2025.
+* **Histórico:** Base de dados estática importada manualmente da notícias agrícolas no cloud (BigQuery) para garantir a continuidade da série desde 2025.
 
 ---
 
@@ -33,7 +33,7 @@ A automação é gerenciada via GitHub Actions. O workflow garante que o banco d
 name: Atualizacao Diaria
 on:
   schedule:
-    - cron: '0 9 * * *'
+    - cron: '0 7 * * *'
 permissions:
   contents: write
 jobs:
@@ -45,7 +45,7 @@ jobs:
         uses: actions/setup-python@v4
       - name: Execute
         run: |
-          pip install pandas pandas-gbq requests agrobr pyarrow
+          pip install pandas pandas-gbq
           python examples/teste_inmet.py
 ```
 ---
@@ -54,21 +54,17 @@ jobs:
 
 Foi implementada uma View SQL para resolver conflitos de tipos de dados e garantir a integridade do JOIN entre as tabelas de clima e mercado.
 
-```yaml
-        CREATE OR REPLACE VIEW `monitor-passofundo.clima_dados.visao_analitica_milho` AS
-    WITH milho_unificado AS (
-        SELECT CAST(data AS DATE) AS data, `a vista` AS preco FROM `milho_historico_estatico`
-        UNION DISTINCT
-        SELECT CAST(data AS DATE) AS data, preco_saca_reais AS preco FROM `precos_milho_cepea`
-    )
-    SELECT 
-        CAST(c.data AS DATE) as data,
-        c.chuva_mm,
-        c.temp_max,
-        m.preco AS preco_saca_reais
-    FROM `historico_diario` c
-    LEFT JOIN milho_unificado m ON CAST(c.data AS DATE) = m.data
-    ORDER BY data ASC
+```sql
+CREATE OR REPLACE VIEW `monitor-passofundo.clima_dados.visao_completa_clima_milho` AS
+SELECT 
+    c.data,
+    c.precipitacao as chuva_mm,
+    c.temp_max,
+    m.preco_saca_reais as preco_milho
+FROM `monitor-passofundo.clima_dados.historico_diario` AS c
+LEFT JOIN `monitor-passofundo.clima_dados.precos_milho_cepea` AS m
+    ON CAST(c.data AS DATE) = CAST(m.data AS DATE)
+ORDER BY c.data DESC
 ```
 ---
 # Gráfico no LOOKER
@@ -77,13 +73,13 @@ Esse gráfico atualiza automaticamente todo dia depois da automação nas >actio
 
 ## Visualização do Projeto
 
-![Dashboard de Monitoramento](dashboard_milho.png/dados_looker_milho.png)
+![Dashboard de Monitoramento](dashboard_milho.png/dados_looker_webscrapi.png)
 
 ---
 
 ## Análise Econômica e Insights
 
-A observação preliminar da série histórica indica uma correlação visual entre os regimes de precipitação em Passo Fundo/RS e a volatilidade dos preços do milho (Indicador CEPEA).
+A observação preliminar da série histórica indica uma correlação visual entre os regimes de precipitação em Passo Fundo/RS e a volatilidade dos preços do milho (Indicador - Milho Praça Passo Fundo/RS - CMA)
 
 * **Comportamento de Curto Prazo:** É possível notar aumentos residuais nas cotações logo após períodos de chuva intensa, o que pode sugerir ajustes de oferta ou dificuldades logísticas momentâneas na região.
 * **Proximos Passos Analiticos:** O projeto evoluirá para a aplicação de modelos econométricos de covariância e regressão linear. O objetivo é quantificar o impacto elástico das variáveis climáticas sobre a formação do preço local, isolando efeitos sazonais.
@@ -91,11 +87,11 @@ A observação preliminar da série histórica indica uma correlação visual en
 ---
 
 ## Problemas enfrentados 
-A principal barreira técnica deste projeto foi a escassez de APIs gratuitas que fornecessem séries históricas longas para o mercado físico de milho no Brasil (Ticker).
+A principal barreira técnica deste projeto foi a escassez de APIs gratuitas que fornecessem séries históricas longas para o mercado físico de milho no Brasil (Ticker)
 
-* Limitação da API: A solução encontrada via biblioteca AgroBR permitiu a captura automatizada de dados apenas a partir de 27 de janeiro de 2026.
+* Limitação da API: A solução encontrada foi fazer webscraping dos dados do site notícias agrícolas
 
-* Estratégia de Mitigação: Para evitar uma análise superficial limitada a um curto período de tempo, foi adotada uma arquitetura híbrida. Realizou-se a extração manual de dados históricos diretamente do CEPEA, que foram tratados e importados como uma base estática no BigQuery.
+* Estratégia de Mitigação: Para evitar uma análise superficial limitada a um curto período de tempo, foi adotada uma arquitetura híbrida. Realizou-se a extração manual de dados históricos diretamente do notícias agrícolas, que foram tratados e importados como uma base estática no BigQuery.
 
 * Resultado: Através de uma operação de UNION via SQL, foi possível consolidar o histórico legado com a automação presente, garantindo uma série temporal robusta para a aplicação de modelos econométricos.
 ---
@@ -142,3 +138,6 @@ Descrição -->   Conteúdo completo do arquivo JSON da Service Account.
 3. requirements.txt: Lista de bibliotecas necessárias.
 
 4. *.csv: Arquivos de backup gerados automaticamente pelo pipeline.
+
+---
+Obrigado por ler até aqui, esse projeto totalizou 45-50 horas e me senti muito feliz quando vi que deu certo!! 🐻
