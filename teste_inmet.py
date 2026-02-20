@@ -60,13 +60,14 @@ try:
         linha_pf = df_milho_bruto[df_milho_bruto.iloc[:, 0].astype(str).str.contains('Passo Fundo', case=False, na=False)]
         
         if not linha_pf.empty:
-            preco_pf = linha_pf.iloc[0, 1]
+            preco_str = str(linha_pf.iloc[0, 1]).strip()
+            preco_pf = float(preco_str.replace('.', '').replace(',', '.'))
             
             data_cotacao = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             
             df_milho_final = pd.DataFrame({
                 'data': [data_cotacao],
-                'preco_saca_reais': [float(preco_pf)],
+                'preco_saca_reais': [preco_pf],
                 'data_carga': [datetime.now()]
             })
             
