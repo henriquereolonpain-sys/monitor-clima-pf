@@ -73,7 +73,7 @@ Esse gráfico atualiza automaticamente todo dia depois da automação nas >actio
 
 ## Visualização do Projeto
 
-![Dashboard de Monitoramento](Projeto/dados_looker_webscrapi.png)
+![Dashboard de Monitoramento](dashboard_milho.png/dados_looker_webscrapi.png)
 
 ---
 
