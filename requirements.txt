@@ -5,3 +5,5 @@ google-cloud-bigquery
 agrobr
 yfinance
 pyarrow
+lxml
+html5lib

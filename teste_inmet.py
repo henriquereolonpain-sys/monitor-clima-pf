@@ -34,29 +34,51 @@ try:
     df_clima.to_csv('clima_historico_90dias.csv', index=False)
 
 #api do mihlo
-    try:
-        df_milho = cepea.indicador('milho')
+try:
+    url_na = "https://www.noticiasagricolas.com.br/cotacoes/milho/indicador-cepea-esalq-milho"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+    }
+    
+    res_milho = requests.get(url_na, headers=headers, timeout=30)
+    res_milho.raise_for_status()
+    
+    from io import StringIO
+    tabelas = pd.read_html(StringIO(res_milho.text), decimal=',', thousands='.')
+    
+    df_milho = pd.DataFrame()
+    for tb in tabelas:
+        if 'Data' in tb.columns or 'Data ' in tb.columns:
+            df_milho = tb
+            break
+            
+    if not df_milho.empty:
+        df_milho.columns = [col.strip() for col in df_milho.columns]
+        df_milho = df_milho.rename(columns={'Data': 'data', 'Valor R$': 'valor', 'Preço R$': 'valor'})
         
-        if not df_milho.empty:
-            df_milho['data'] = pd.to_datetime(df_milho['data'])
-            
-            mask = (df_milho['data'] >= pd.to_datetime(data_inicio))
-            df_milho_filtrado = df_milho.loc[mask].copy()
-            
+        df_milho['data'] = pd.to_datetime(df_milho['data'], format='%d/%m/%Y', errors='coerce')
+        df_milho = df_milho.dropna(subset=['data'])
+        
+        mask = (df_milho['data'] >= pd.to_datetime(data_inicio))
+        df_milho_filtrado = df_milho.loc[mask].copy()
+        
+        if not df_milho_filtrado.empty:
             df_milho_filtrado = df_milho_filtrado.rename(columns={'valor': 'preco_saca_reais'})
             df_milho_filtrado['data_carga'] = datetime.now()
             
             df_milho_final = df_milho_filtrado[['data', 'preco_saca_reais', 'data_carga']]
             
             df_milho_final.to_csv('milho_recentes.csv', index=False)
+            print("Dados de MILHO baixados do Notícias Agrícolas com sucesso.")
         else:
-            df_milho_final = pd.DataFrame()
-            
-    except Exception as e:
-        print(f"Erro{e}")
-        df_milho_final = pd.DataFrame()
+            print("Dados de milho vazios após filtro de data.")
+    else:
+        print("Não foi possível localizar a tabela de preços no HTML.")
 
-    # 3. CARREGA PARA O BIGQUERY
+except Exception as e:
+    print(f"Erro ao baixar MILHO: {e}")
+
+    # CARREGA PARA O BIGQUERY
     pandas_gbq.to_gbq(df_clima, f"{NOME_DATASET}.historico_diario", project_id=ID_PROJETO, if_exists='replace')
     print("Tabela CLIMA atualizada")
 
