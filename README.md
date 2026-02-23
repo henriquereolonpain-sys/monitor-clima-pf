@@ -98,15 +98,17 @@ Através do Teste de **Causalidade de Granger**, identificou-se que o impacto m�
 Utilizou-se o método de Mínimos Quadrados Ordinários para quantificar o choque financeiro. O modelo apresentou um **p-valor de 0.007**, indicando significância estatística superior a 99%.
 
 ![Dashboard de Monitoramento](dashboard_milho.png/OLS.png)
+
 $$\Delta Preco \approx 0.125 \times Chuva_{t-6}$$
 
 **Insight:** Para cada 10mm de chuva acumulada em Passo Fundo, o preço da saca tende a subir, em média: **R$ 1,25** apos 6 dias.
 
 ### 3. Análise de Volatilidade e Risco
 Calculou-se a volatilidade móvel (Desvio Padrão de 7 dias) para medir o estresse do mercado:
-$$\sigma = \sqrt{\frac{1}{N-1} \sum_{i=1}^{N} (x_i - \bar{x})^2}$$
-Os resultados demonstram que picos de pluviosidade estão correlacionados ao aumento da incerteza de mercado, elevando o risco para produtores e compradores.
 
+$$\sigma = \sqrt{\frac{1}{N-1} \sum_{i=1}^{N} (x_i - \bar{x})^2}$$
+
+Os resultados demonstram que picos de pluviosidade estão correlacionados ao aumento da incerteza de mercado, elevando o risco para produtores e compradores.
 
 ![Dashboard de Monitoramento](dashboard_milho.png/Análise_Volatilidade.png)
 
@@ -130,8 +132,8 @@ A principal barreira técnica deste projeto foi a escassez de APIs gratuitas que
 * Estratégia de Mitigação: Para evitar uma análise superficial limitada a um curto período de tempo, foi adotada uma arquitetura híbrida. Realizou-se a extração manual de dados históricos diretamente do notícias agrícolas, que foram tratados e importados como uma base estática no BigQuery.
 
 * Resultado: Através de uma operação de UNION via SQL, foi possível consolidar o histórico legado com a automação presente, garantindo uma série temporal robusta para a aplicação de modelos econométricos.
----
 
+---
 
 ## Como Instalar e Executar
 <details>
@@ -178,4 +180,5 @@ Descrição -->   Conteúdo completo do arquivo JSON da Service Account.
 
 4. *.csv: Arquivos de backup gerados automaticamente pelo pipeline.
 </details>
-Obrigado por ler até aqui, esse projeto totalizou 45-50 horas e me senti muito feliz quando vi que deu certo!! 🐻
+
+Obrigado por ler até aqui, esse projeto totalizou 45-50 horas, um big abraço! 🐻
