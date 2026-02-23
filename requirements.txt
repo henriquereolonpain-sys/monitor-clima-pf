@@ -7,3 +7,9 @@ yfinance
 pyarrow
 lxml
 html5lib
+db-dtypes
+seaborn
+matplotlib
+statsmodels
+scipy
+ipython
