@@ -1,6 +1,6 @@
 # Monitoramento de Preços de Milho e Variáveis Climáticas - Passo Fundo/RS
 
-Este projeto automatiza a coleta, processamento e visualização de dados de preços de Milho (Praça Passo Fundo/RS - CMA) correlacionados com variáveis meteorológicas da região de Passo Fundo. A estrutura utiliza um pipeline de dados em nuvem para sustentar um dashboard de análise econômica, usando webscraping, API e google cloud.
+Este projeto automatiza a coleta, processamento e visualização de dados de preços de Milho (Praça Passo Fundo/RS - CMA) correlacionados com variáveis meteorológicas da região. A estrutura utiliza um pipeline de dados em nuvem para sustentar uma análise econométrica robusta, quantificando o impacto de choques climáticos no mercado físico regional, usando webscraping, API e Google cloud.
 
 ---
 
@@ -11,7 +11,8 @@ O projeto utiliza uma abordagem de armazenamento em camadas para garantir a resi
 1. **Coleta (Python):** Scripts executados via GitHub Actions extraem dados diariamente às 7 da manhã e mandam pra query.
 2. **Armazenamento (BigQuery):** Data Warehouse centralizando dados históricos (sql) e dados em tempo real (API) vindos das _actions_.
 3. **Processamento (SQL):** Views otimizadas realizam o tratamento de tipos de dados e a unificação das séries temporais, dentro do próprio BigQuery.
-4. **Visualização (Looker Studio):** Dashboard interativo para análise de correlação e tendência, atualizado automaticamente pelo SQL do BigQuery no Cloud.
+4. **Análise Econométrica (Jupyter):** Modelagem de causalidade, regressão linear (OLS) e análise de volatilidade.
+5. **Visualização (Looker Studio):** Dashboard interativo para monitoramento de tendências em tempo real.
 
 ![PIPE](dashboard_milho.png/pipeline.png)
 
@@ -20,13 +21,14 @@ O projeto utiliza uma abordagem de armazenamento em camadas para garantir a resi
 ## Fontes de Dados
 
 * **Precos do Milho:** Web Scraping customizado via BeautifulSoup e Pandas extraindo cotações do mercado físico (CMA) diretamente do Notícias Agrícolas.
-* **Dados Climáticos:** Open-Meteo API (Forecast e Archive) para captura de precipitação e temperatura máxima a partir da última data estática.
+* **Dados Climáticos:** Open-Meteo API (Forecast e Archive) para captura de precipitacao e temperatura maxima.
 * **Histórico:** Base de dados estática importada manualmente da notícias agrícolas no cloud (BigQuery) para garantir a continuidade da série desde 2025.
 
 ---
 
 ## Estrutura de Automação
-
+<details>
+<summary><b>Automacao (GitHub Actions)</b></summary>
 A automação é gerenciada via GitHub Actions. O workflow garante que o banco de dados e os backups em CSV sejam atualizados sem intervenção manual.
 
 ```yaml
@@ -48,9 +50,12 @@ jobs:
           pip install pandas pandas-gbq
           python examples/teste_inmet.py
 ```
----
+</details>
+
 
 ## Tratamento de Dados no BigQuery
+<details>
+<summary><b>Tratamento big Q</b></summary>
 
 Foi implementada uma View SQL para resolver conflitos de tipos de dados e garantir a integridade do JOIN entre as tabelas de clima e mercado.
 
@@ -66,23 +71,54 @@ LEFT JOIN `monitor-passofundo.clima_dados.precos_milho_cepea` AS m
     ON CAST(c.data AS DATE) = CAST(m.data AS DATE)
 ORDER BY c.data DESC
 ```
----
-# Gráfico no LOOKER
+</details>
+
+
+## Gráfico no LOOKER
 
 Esse gráfico atualiza automaticamente todo dia depois da automação nas >actions< ser feita.
-
-## Visualização do Projeto
 
 ![Dashboard de Monitoramento](dashboard_milho.png/dados_looker_webscrapi.png)
 
 ---
 
-## Análise Econômica e Insights
+# Análise Econômica e Insights
 
-A observação preliminar da série histórica indica uma correlação visual entre os regimes de precipitação em Passo Fundo/RS e a volatilidade dos preços do milho (Indicador - Milho Praça Passo Fundo/RS - CMA)
+## Metodologia e Inteligência Econométrica
 
-* **Comportamento de Curto Prazo:** É possível notar aumentos residuais nas cotações logo após períodos de chuva intensa, o que pode sugerir ajustes de oferta ou dificuldades logísticas momentâneas na região.
-* **Proximos Passos Analiticos:** O projeto evoluirá para a aplicação de modelos econométricos de covariância e regressão linear. O objetivo é quantificar o impacto elástico das variáveis climáticas sobre a formação do preço local, isolando efeitos sazonais.
+Para superar a lacuna entre dados climáticos (7 dias/semana) e cotações de mercado (5 dias/semana), foi aplicada a técnica de **Forward Fill (ffill)**. Isso permitiu que o modelo computasse chuvas ocorridas em finais de semana, que anteriormente eram descartadas, dobrando a robustez da amostra estatística.
+
+### 1. Identificação de Causalidade (Lag Analysis)
+Através do Teste de **Causalidade de Granger**, identificou-se que o impacto máximo da chuva sobre o preço ocorre com uma defasagem de 6 dias (Lag 6). Esse intervalo representa o tempo de resposta logística e o ajuste de oferta nas cooperativas locais.
+
+![Dashboard de Monitoramento](dashboard_milho.png/causalidade_granger.png)
+
+
+### 2. Modelo de Regressão Linear (OLS)
+Utilizou-se o método de Mínimos Quadrados Ordinários para quantificar o choque financeiro. O modelo apresentou um **p-valor de 0.007**, indicando significância estatística superior a 99%.
+
+![Dashboard de Monitoramento](dashboard_milho.png/OLS.png)
+$$\Delta Preco \approx 0.125 \times Chuva_{t-6}$$
+
+**Insight:** Para cada 10mm de chuva acumulada em Passo Fundo, o preço da saca tende a subir, em média: **R$ 1,25** apos 6 dias.
+
+### 3. Análise de Volatilidade e Risco
+Calculou-se a volatilidade móvel (Desvio Padrão de 7 dias) para medir o estresse do mercado:
+$$\sigma = \sqrt{\frac{1}{N-1} \sum_{i=1}^{N} (x_i - \bar{x})^2}$$
+Os resultados demonstram que picos de pluviosidade estão correlacionados ao aumento da incerteza de mercado, elevando o risco para produtores e compradores.
+
+
+![Dashboard de Monitoramento](dashboard_milho.png/Análise_Volatilidade.png)
+
+---
+
+## Exemplo de Aplicacao: Predição de Curto Prazo
+
+O modelo permite a geracão de alertas e projeções para a abertura de mercado. Abaixo, um exemplo de output gerado pelo sistema utilizando dados reais de 23/02/2026 para prever o impacto logistico na saca de milho no Lag 6 dia 02 de março de 26
+
+![Dashboard de Monitoramento](dashboard_milho.png/projeção_milho_02-03.png)
+
+*Nota: Esta projeão considera exclusivamente o choque de oferta derivado da pluviosidade regional, isolando variáveis de mercado externo.*
 
 ---
 
@@ -96,7 +132,10 @@ A principal barreira técnica deste projeto foi a escassez de APIs gratuitas que
 * Resultado: Através de uma operação de UNION via SQL, foi possível consolidar o histórico legado com a automação presente, garantindo uma série temporal robusta para a aplicação de modelos econométricos.
 ---
 
+
 ## Como Instalar e Executar
+<details>
+<summary><b>Instalação</b></summary>
 
 * Pré-requisitos
 
@@ -138,6 +177,5 @@ Descrição -->   Conteúdo completo do arquivo JSON da Service Account.
 3. requirements.txt: Lista de bibliotecas necessárias.
 
 4. *.csv: Arquivos de backup gerados automaticamente pelo pipeline.
-
----
+</details>
 Obrigado por ler até aqui, esse projeto totalizou 45-50 horas e me senti muito feliz quando vi que deu certo!! 🐻
