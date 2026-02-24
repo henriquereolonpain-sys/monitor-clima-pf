@@ -2,14 +2,14 @@ import pandas as pd
 import pandas_gbq
 import requests
 from datetime import datetime, timedelta
-from io import StringIO
+
 
 # Config
 ID_PROJETO = 'monitor-passofundo'
 NOME_DATASET = 'clima_dados'
 LAT, LON = -28.2628, -52.4087 
 
-# Definição de datas
+# DaTas 30d
 hoje = datetime.now()
 inicio = hoje - timedelta(days=90)
 data_inicio = inicio.strftime('%Y-%m-%d')
@@ -18,8 +18,7 @@ df_clima = pd.DataFrame()
 df_milho_final = pd.DataFrame()
 
 
-# 1. API DO CLIMA (OPEN-METEO)
-
+# 1. API CLIMA
 try:
     url_clima = f"https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&past_days=92&daily=temperature_2m_max,precipitation_sum&timezone=America%2FSao_Paulo"
     
@@ -40,8 +39,7 @@ except Exception as e:
     print(f"Erro ao baixar CLIMA: {e}")
 
 
-# 2. WEB SCRAPING DO MILHO (NOTICIAS AGRICOLAS - CMA PASSO FUNDO)
-
+# 2. WEB SCRAPING DO MILHO
 try:
     url_na = "https://www.noticiasagricolas.com.br/cotacoes/milho/milho-cma"
     headers = {
@@ -81,7 +79,6 @@ except Exception as e:
     print(f"Erro ao baixar MILHO CMA: {e}")
 
 # 3. CARGA PARA O BIGQUERY
-
 try:
     if not df_clima.empty:
         pandas_gbq.to_gbq(df_clima, f"{NOME_DATASET}.historico_diario", project_id=ID_PROJETO, if_exists='replace')
@@ -89,7 +86,7 @@ try:
     
     if not df_milho_final.empty:
         pandas_gbq.to_gbq(df_milho_final, f"{NOME_DATASET}.precos_milho_cepea", project_id=ID_PROJETO, if_exists='append')
-        print("Sucesso: Tabela MILHO atualizada no BigQuery.")
+        print("Sucesso")
 
 except Exception as e:
-    print(f"Erro no Upload para o BigQuery: {e}")
+    print(f"Erro {e}")
