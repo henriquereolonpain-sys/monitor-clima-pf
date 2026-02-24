@@ -2,12 +2,10 @@ pandas
 requests
 pandas-gbq
 google-cloud-bigquery
-agrobr
-yfinance
+db-dtypes
 pyarrow
 lxml
 html5lib
-db-dtypes
 seaborn
 matplotlib
 statsmodels
